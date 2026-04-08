@@ -22,7 +22,7 @@ class VideoKeyframeGridApp:
         # 使用传入的root实例
         self.root = root
         self.root.title("视频关键帧预览工具")
-        self.root.geometry("860x800")  # 修改初始窗口大小为860x800
+        self.root.geometry("900x800")  # 
         
         # 设置窗口大小可调整
         self.root.resizable(True, True)
@@ -30,6 +30,9 @@ class VideoKeyframeGridApp:
         # 设置样式
         self.style = ttk.Style()
         self.style.theme_use('clam')
+        
+        # 全局字体设置
+        self.style.configure('.', font=('Microsoft YaHei', 10))
         
         # 初始化变量
         self.file_queue = []  # 处理队列
@@ -90,7 +93,7 @@ class VideoKeyframeGridApp:
         self.title_label = ttk.Label(
             title_frame, 
             text="视频关键帧预览工具", 
-            font=("Arial", 16, "bold")
+            font=("Microsoft YaHei", 16, "bold")
         )
         self.title_label.pack(side=tk.LEFT)
         
@@ -193,7 +196,7 @@ class VideoKeyframeGridApp:
         self.drop_label = ttk.Label(
             self.drop_frame, 
             text="拖拽视频文件到这里\n\n支持多个文件同时拖拽", 
-            font=("Arial", 14),
+            font=("Microsoft YaHei", 14),
             foreground="gray",
             justify=tk.CENTER,
             padding=(40, 40)
@@ -250,7 +253,7 @@ class VideoKeyframeGridApp:
         instruction_label = ttk.Label(
             queue_control_frame,
             text="拖拽更多视频文件到上方区域以添加到队列",
-            font=("Arial", 10),
+            font=("Microsoft YaHei", 10),
             foreground="gray"
         )
         instruction_label.pack(side=tk.LEFT, padx=(0, 10))
@@ -281,7 +284,7 @@ class VideoKeyframeGridApp:
             height=10,  # 减少日志显示区域的高度，避免窗口过高
             state=tk.DISABLED,
             wrap=tk.WORD,
-            font=("Consolas", 10),
+            font=("Microsoft YaHei", 10),
             yscrollcommand=log_scrollbar.set
         )
         self.log_text.pack(fill=tk.BOTH, expand=True)
@@ -292,7 +295,7 @@ class VideoKeyframeGridApp:
         self.progress_label = ttk.Label(
             main_frame, 
             textvariable=self.progress_var,
-            font=("Arial", 10)
+            font=("Microsoft YaHei", 10)
         )
         # 初始隐藏
         self.progress_label.grid_remove()
@@ -1476,6 +1479,28 @@ class VideoKeyframeGridApp:
 
 
 def main():
+    # PyInstaller 打包后设置 tkdnd 路径
+    import sys
+    import platform
+    if getattr(sys, 'frozen', False):
+        # 获取 tkdnd 平台目录
+        machine = os.environ.get('PROCESSOR_ARCHITECTURE', platform.machine())
+        if machine == 'AMD64':
+            tkdnd_platform = 'win-x64'
+        elif machine == 'ARM64':
+            tkdnd_platform = 'win-arm64'
+        else:
+            tkdnd_platform = 'win-x86'
+        
+        # 从 _MEIPASSED 提取 tkdnd
+        base_path = sys._MEIPASS
+        tkdnd_src = os.path.join(base_path, 'tkdnd', tkdnd_platform)
+        tkdnd_dest = os.path.join(sys._MEIPASS, 'tkdnd', tkdnd_platform)
+        
+        # 确保路径存在
+        if os.path.exists(tkdnd_src):
+            os.environ['TKDND_LIBRARY_PATH'] = tkdnd_src
+    
     # 创建tkinterdnd2根窗口
     root = tkinterdnd2.Tk()
     
