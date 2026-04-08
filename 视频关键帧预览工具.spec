@@ -1,25 +1,31 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 
+block_cipher = None
+
+
 a = Analysis(
     ['视频关键帧预览工具.py'],
     pathex=[],
     binaries=[],
-    datas=[('.', '.')],
-    hiddenimports=['PIL', 'PIL._imaging', 'tkinterdnd2', 'tkinterdnd2.TkinterDnD'],
+    datas=[('C:\\Users\\ez-mi\\AppData\\Local\\Programs\\Python\\Python37\\lib\\site-packages\\tkinterdnd2\\tkdnd', 'tkdnd')],
+    hiddenimports=['tkdnd'],
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=['tkdnd_hook.py'],
     excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
     noarchive=False,
-    optimize=0,
 )
-pyz = PYZ(a.pure)
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
+    a.zipfiles,
     a.datas,
     [],
     name='视频关键帧预览工具',
