@@ -59,6 +59,9 @@ class VideoKeyframeGridApp:
         }
         self.selected_resolution = tk.StringVar(value="320")  # 默认选择320像素
         
+        # 输出目录配置
+        self.output_dir = tk.StringVar(value="")  # 空表示输出到原目录
+        
         # 结果消息变量
         self.result_message = tk.StringVar(value="")
         self.result_type = tk.StringVar(value="info")  # info, success, error
@@ -139,6 +142,43 @@ class VideoKeyframeGridApp:
             )
             rb.pack(side=tk.LEFT, padx=(10, 0))
         
+        # 输出目录选择区域
+        output_dir_frame = ttk.LabelFrame(
+            main_frame, 
+            text="输出目录选择", 
+            padding="10"
+        )
+        output_dir_frame.grid(row=3, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=(0, 10))
+        
+        # 输出目录选项
+        ttk.Radiobutton(
+            output_dir_frame,
+            text="输出到原视频目录",
+            variable=self.output_dir,
+            value=""
+        ).pack(side=tk.LEFT, padx=(0, 20))
+        
+        ttk.Radiobutton(
+            output_dir_frame,
+            text="输出到指定目录:",
+            variable=self.output_dir,
+            value="custom"
+        ).pack(side=tk.LEFT, padx=(0, 10))
+        
+        # 输出目录输入框
+        self.output_dir_entry = ttk.Entry(output_dir_frame, textvariable=self.output_dir, width=50)
+        self.output_dir_entry.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # 浏览按钮
+        ttk.Button(
+            output_dir_frame,
+            text="浏览...",
+            command=self.browse_output_dir
+        ).pack(side=tk.LEFT)
+        
+        # 默认选择原目录
+        self.output_dir.set("")
+        
         # 拖放区域（初始状态）
         self.drop_frame = ttk.LabelFrame(
             main_frame, 
@@ -147,7 +187,7 @@ class VideoKeyframeGridApp:
             relief="groove",
             borderwidth=2
         )
-        self.drop_frame.grid(row=3, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 20))
+        self.drop_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 20))
         
         # 拖放提示标签
         self.drop_label = ttk.Label(
@@ -200,7 +240,7 @@ class VideoKeyframeGridApp:
         queue_scrollbar.config(command=self.queue_tree.yview)
         
         # 绑定双击事件，用于预览
-        self.queue_tree.bind("<Double-1>", self.on_queue_item_double_click)
+        self.queue_tree.bind("<Button-1>", self.on_queue_item_click)
         
         # 队列控制说明
         queue_control_frame = ttk.Frame(self.processing_frame)
@@ -283,6 +323,14 @@ class VideoKeyframeGridApp:
     def cleanup_temp_files(self):
         """清理临时文件"""
         pass  # 不需要清理任何临时文件
+    
+    def browse_output_dir(self):
+        """浏览并选择输出目录"""
+        dir_path = filedialog.askdirectory(
+            title="选择输出目录"
+        )
+        if dir_path:
+            self.output_dir.set(dir_path)
         
     def setup_drag_drop(self):
         """设置拖放功能"""
@@ -429,7 +477,7 @@ class VideoKeyframeGridApp:
         self.file_queue = []
         
         # 显示拖放区域
-        self.drop_frame.grid(row=3, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 20))
+        self.drop_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 20))
         
         # 更新界面状态
         self.interface_state = "drop"
@@ -792,7 +840,21 @@ class VideoKeyframeGridApp:
 
         # 保存宫格图
         input_path = Path(video_path)
-        output_dir = input_path.parent
+        
+        # 确定输出目录：如果用户指定了自定义目录则使用，否则使用原视频目录
+        if self.output_dir.get() and self.output_dir.get() != "custom":
+            output_dir = Path(self.output_dir.get())
+            # 确保输出目录存在
+            if not output_dir.exists():
+                try:
+                    output_dir.mkdir(parents=True, exist_ok=True)
+                    self.add_log(f"已创建输出目录: {output_dir}", "info")
+                except Exception as e:
+                    self.add_log(f"无法创建输出目录: {str(e)}，将使用原视频目录", "warning")
+                    output_dir = input_path.parent
+        else:
+            output_dir = input_path.parent
+        
         grid_name = f"{input_path.stem}_keyframes_{rows}x{cols}_{max_size}p.jpg"
         grid_path = output_dir / grid_name
 
@@ -874,8 +936,8 @@ class VideoKeyframeGridApp:
         filter_text = self.log_filter_var.get()
         self.add_log(f"过滤日志: {filter_text}", "info")
     
-    def on_queue_item_double_click(self, event):
-        """处理队列项的双击事件，显示预览窗口"""
+    def on_queue_item_click(self, event):
+        """处理队列项的单击事件，显示预览窗口"""
         # 获取被双击的项
         item = self.queue_tree.identify_row(event.y)
         if not item:
@@ -1410,7 +1472,7 @@ class VideoKeyframeGridApp:
         self.populate_preview_tree(preview_tree)
         
         # 双击预览
-        preview_tree.bind("<Double-1>", lambda event: self.preview_selected_item(preview_tree))
+        preview_tree.bind("<Button-1>", lambda event: self.preview_selected_item(preview_tree))
 
 
 def main():
